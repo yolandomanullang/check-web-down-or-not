@@ -3,12 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+const String defaultUrl1 = 'https://pandang.istanapresiden.go.id/';
+const String defaultUrl2 = 'https://pointblank.id/';
+
 class WebsiteStatus {
   int count;
   String url;
   String status;
 
-  WebsiteStatus({required this.count, required this.url, required this.status});
+  WebsiteStatus({
+    required this.count,
+    required this.url,
+    required this.status,
+  });
 }
 
 class HttpChecker extends StatefulWidget {
@@ -17,27 +24,30 @@ class HttpChecker extends StatefulWidget {
 }
 
 class _HttpCheckerState extends State<HttpChecker> {
-  List<WebsiteStatus> websiteStatusList = [];
+  final List<WebsiteStatus> websiteStatusList = [];
   int count = 0;
   bool isChecking = false;
   Timer? timer;
-  TextEditingController urlController = TextEditingController();
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  final TextEditingController urlController = TextEditingController();
+  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
   bool isNotificationEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    var initializationSettingsAndroid =
-        const AndroidInitializationSettings('@mipmap/ic_launcher');
+    var initializationSettingsAndroid = const AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     var initializationSettings = InitializationSettings(
-        android: initializationSettingsAndroid, iOS: null);
+      android: initializationSettingsAndroid,
+      iOS: null,
+    );
+    flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
 
-  Future onSelectNotification(String? payload) async {
-    // Tindakan yang akan diambil ketika notifikasi diklik (opsional)
+  Future<void> onSelectNotification(String? payload) async {
+    // Action to be taken when the notification is clicked (optional)
   }
 
   Future<void> showNotification(String title, String body, int count) async {
@@ -73,28 +83,27 @@ class _HttpCheckerState extends State<HttpChecker> {
     });
 
     try {
-      final response =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse(url)).timeout(
+            const Duration(seconds: 3),
+          );
+      print(response.statusCode);
       if (response.statusCode == 200) {
-        setState(() {
-          websiteStatusList.add(
-              WebsiteStatus(count: count, url: url, status: 'Website Hidup'));
-        });
+        websiteStatusList.add(
+          WebsiteStatus(count: count, url: url, status: 'Website Hidup'),
+        );
 
         if (isNotificationEnabled) {
           showNotification('Status', 'Hidup: $url', count);
         }
       } else {
-        setState(() {
-          websiteStatusList.add(
-              WebsiteStatus(count: count, url: url, status: 'Website Down'));
-        });
+        websiteStatusList.add(
+          WebsiteStatus(count: count, url: url, status: 'Website Down'),
+        );
       }
     } catch (e) {
-      setState(() {
-        websiteStatusList
-            .add(WebsiteStatus(count: count, url: url, status: 'Website Down'));
-      });
+      websiteStatusList.add(
+        WebsiteStatus(count: count, url: url, status: 'Website Down'),
+      );
     } finally {
       setState(() {
         isChecking = false;
@@ -118,9 +127,12 @@ class _HttpCheckerState extends State<HttpChecker> {
       timer = null;
     }
 
-    timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      checkWebsiteStatus();
-    });
+    timer = Timer.periodic(
+      const Duration(seconds: 5),
+      (timer) {
+        checkWebsiteStatus();
+      },
+    );
   }
 
   void stopChecking() {
@@ -166,15 +178,11 @@ class _HttpCheckerState extends State<HttpChecker> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: () {
-                    _setDefaultUrl('https://pandang.istanapresiden.go.id/');
-                  },
+                  onPressed: () => _setDefaultUrl(defaultUrl1),
                   child: const Text('Default URL 1'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    _setDefaultUrl('https://pointblank.id/');
-                  },
+                  onPressed: () => _setDefaultUrl(defaultUrl2),
                   child: const Text('Default URL 2'),
                 ),
               ],
@@ -191,33 +199,35 @@ class _HttpCheckerState extends State<HttpChecker> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: isChecking ? null : () => startChecking(),
+                  onPressed: isChecking ? null : startChecking,
                   child: Row(
                     children: [
-                      Icon(Icons.play_arrow), // Tambahkan ikon play
+                      Icon(Icons.play_arrow), // Add play icon
                       const SizedBox(
-                          width: 4), // Tambahkan jarak antara ikon dan teks
+                          width: 4), // Add spacing between icon and text
                       const Text('Check'),
                     ],
                   ),
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                   ),
                 ),
                 ElevatedButton(
                   onPressed: isChecking || websiteStatusList.isEmpty
                       ? null
-                      : () => stopChecking(),
+                      : stopChecking,
                   child: Row(
                     children: [
-                      Icon(Icons.stop), // Tambahkan ikon stop
+                      Icon(Icons.stop), // Add stop icon
                       const SizedBox(
-                          width: 4), // Tambahkan jarak antara ikon dan teks
+                          width: 4), // Add spacing between icon and text
                       const Text('Stop'),
                     ],
                   ),
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                   ),
                 ),
               ],
@@ -236,20 +246,20 @@ class _HttpCheckerState extends State<HttpChecker> {
                             leading: CircleAvatar(
                               backgroundColor: status.status == 'Website Hidup'
                                   ? Colors
-                                      .green // Ubah warna latar belakang CircleAvatar jika website hidup
+                                      .green // Change CircleAvatar background color if website is up
                                   : Colors
-                                      .red, // Ubah warna latar belakang CircleAvatar jika website down
+                                      .red, // Change CircleAvatar background color if website is down
                               child: Text(
                                 '${status.count}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors
-                                      .white, // Ubah warna teks CircleAvatar
+                                      .white, // Change CircleAvatar text color
                                 ),
                               ),
                             ),
                             title: Text(
                               status.url,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -258,9 +268,9 @@ class _HttpCheckerState extends State<HttpChecker> {
                               style: TextStyle(
                                 color: status.status == 'Website Hidup'
                                     ? Colors
-                                        .green // Ubah warna teks status jika website hidup
+                                        .green // Change status text color if website is up
                                     : Colors
-                                        .red, // Ubah warna teks status jika website down
+                                        .red, // Change status text color if website is down
                               ),
                             ),
                           ),
@@ -284,7 +294,9 @@ class _HttpCheckerState extends State<HttpChecker> {
 
 void main() {
   runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: HttpChecker(),
-  ));
+      debugShowCheckedModeBanner: false,
+      home: HttpChecker(),
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+      )));
 }

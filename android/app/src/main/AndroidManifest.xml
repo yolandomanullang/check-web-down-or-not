@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.tracking_web">
+    <uses-permission android:name="android.permission.INTERNET" />
    <application
         android:label="tracking_web"
         android:name="${applicationName}"
